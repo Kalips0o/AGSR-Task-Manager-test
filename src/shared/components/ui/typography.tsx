@@ -30,6 +30,7 @@ interface TypographyProps<T extends TypographyTag> {
   strong?: boolean;
   td?: TextDecoration;
   tag?: T;
+  onClick?: () => void;
 }
 
 const classes = {
@@ -57,6 +58,7 @@ export const Typography = <T extends TypographyTag>({
   strong,
   tag: Tag,
   variant = "body-lg-regular",
+  onClick,
 }: TypographyProps<T>) => {
   const TagToRender = Tag || "p";
 
@@ -64,6 +66,7 @@ export const Typography = <T extends TypographyTag>({
     <TagToRender
       className={twMerge(`${classes[variant]}`, strong && "strong", td && `${td}`, className)}
       style={style}
+      onClick={onClick}
     >
       {children}
     </TagToRender>
