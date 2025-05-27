@@ -1,3 +1,5 @@
+"use client";
+
 import React from "react";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -19,6 +21,14 @@ interface TaskModalProps {
   onClose: () => void;
 }
 
+type FormData = {
+  id: string;
+  title?: string;
+  description?: string;
+  timeToComplete?: string | number;
+  done?: boolean;
+};
+
 export function TaskModal({ task, isOpen, onClose }: TaskModalProps) {
   const dispatch = useDispatch<AppDispatch>();
 
@@ -26,7 +36,7 @@ export function TaskModal({ task, isOpen, onClose }: TaskModalProps) {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<UpdateTaskData>({
+  } = useForm<FormData>({
     resolver: zodResolver(updateTaskSchema),
     defaultValues: {
       id: task.id,
@@ -37,8 +47,17 @@ export function TaskModal({ task, isOpen, onClose }: TaskModalProps) {
     },
   });
 
-  const handleFormSubmit: SubmitHandler<UpdateTaskData> = async (data) => {
-    await onSubmit(data);
+  const onSubmit: SubmitHandler<FormData> = async (data) => {
+    const updateData: UpdateTaskData = {
+      ...data,
+      timeToComplete:
+        typeof data.timeToComplete === "string"
+          ? data.timeToComplete === ""
+            ? undefined
+            : Number(data.timeToComplete)
+          : data.timeToComplete,
+    };
+    await dispatch(updateTask(updateData));
     onClose();
   };
 
@@ -63,14 +82,13 @@ export function TaskModal({ task, isOpen, onClose }: TaskModalProps) {
             </Button>
           </div>
 
-          <form className="space-y-4" onSubmit={handleSubmit(handleFormSubmit)}>
+          <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
             <div className="space-y-2">
               <Typography className="text-gray-700" variant="body-m-medium">
                 Task Title
               </Typography>
               <Input
                 {...register("title")}
-                disabled={isLoading}
                 error={errors.title?.message}
                 placeholder="Task title"
               />
@@ -82,7 +100,6 @@ export function TaskModal({ task, isOpen, onClose }: TaskModalProps) {
               </Typography>
               <Input
                 {...register("description")}
-                disabled={isLoading}
                 error={errors.description?.message}
                 placeholder="Task description (optional)"
               />
@@ -93,8 +110,7 @@ export function TaskModal({ task, isOpen, onClose }: TaskModalProps) {
                 Time to Complete (minutes)
               </Typography>
               <Input
-                {...register("timeToComplete", { valueAsNumber: true })}
-                disabled={isLoading}
+                {...register("timeToComplete")}
                 error={errors.timeToComplete?.message}
                 min="1"
                 placeholder="Estimated time in minutes (optional)"
@@ -106,7 +122,6 @@ export function TaskModal({ task, isOpen, onClose }: TaskModalProps) {
               <input
                 {...register("done")}
                 className="h-4 w-4 rounded border-gray-300 text-gray-800 focus:ring-gray-500"
-                disabled={isLoading}
                 type="checkbox"
               />
               <Typography className="text-gray-700" variant="body-m-medium">
@@ -115,18 +130,10 @@ export function TaskModal({ task, isOpen, onClose }: TaskModalProps) {
             </div>
 
             <div className="flex justify-end space-x-3 pt-4">
-              <Button
-                className="text-gray-700"
-                disabled={isLoading}
-                type="button"
-                variant="outline"
-                onClick={onClose}
-              >
+              <Button className="text-gray-700" type="button" variant="outline" onClick={onClose}>
                 Cancel
               </Button>
-              <Button disabled={isLoading} type="submit">
-                {isLoading ? "Saving..." : "Save Changes"}
-              </Button>
+              <Button type="submit">Save Changes</Button>
             </div>
           </form>
         </div>

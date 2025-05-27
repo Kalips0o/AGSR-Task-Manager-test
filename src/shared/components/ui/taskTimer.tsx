@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 
 import { getRemainingTime, getElapsedTime } from "@/shared/lib/utils";
 import { cn } from "@/shared/lib/utils";
@@ -38,15 +38,15 @@ export const TaskTimer = React.memo(function TaskTimer({
   });
 
   // Функция очистки интервала
-  const clearTimerInterval = () => {
+  const clearTimerInterval = useCallback(() => {
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
       intervalRef.current = null;
     }
-  };
+  }, []);
 
   // Функция обновления отображаемого времени
-  const updateDisplay = () => {
+  const updateDisplay = useCallback(() => {
     const { startTime } = timerStateRef.current;
 
     if (!timeToComplete) {
@@ -70,10 +70,10 @@ export const TaskTimer = React.memo(function TaskTimer({
     setIsTimeUp(timeIsUp);
 
     return timeIsUp;
-  };
+  }, [timeToComplete, isDone]);
 
   // Функция сброса таймера
-  const resetTimer = () => {
+  const resetTimer = useCallback(() => {
     clearTimerInterval();
     timerStateRef.current = {
       startTime: new Date(createdAt).getTime(),
@@ -81,7 +81,7 @@ export const TaskTimer = React.memo(function TaskTimer({
     };
     setIsTimeUp(false);
     setDisplayTime(TIMER_STATES.CALCULATING);
-  };
+  }, [createdAt, timeToComplete, clearTimerInterval]);
 
   useEffect(() => {
     // Проверяем необходимость сброса таймера
@@ -107,7 +107,7 @@ export const TaskTimer = React.memo(function TaskTimer({
     }
 
     return clearTimerInterval;
-  }, [createdAt, timeToComplete, isDone, resetTimer, updateDisplay]);
+  }, [createdAt, timeToComplete, isDone, resetTimer, updateDisplay, clearTimerInterval]);
 
   // Определяем цвет текста
   const textColor = isDone ? "text-green-600" : isTimeUp ? "text-red-600" : "text-blue-600";
