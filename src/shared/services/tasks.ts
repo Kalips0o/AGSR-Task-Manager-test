@@ -1,3 +1,5 @@
+import { v4 as uuidv4 } from "uuid";
+
 import type { CreateTaskData, CreateListData, UpdateTaskData } from "../schemas/task";
 import type { Task, TaskList } from "../types/task";
 
@@ -7,182 +9,198 @@ interface ApiResponse<T> {
   error?: string;
 }
 
+const STORAGE_KEY = "task_lists";
+
+const getStoredLists = (): TaskList[] => {
+  if (typeof window === "undefined") return [];
+  const stored = localStorage.getItem(STORAGE_KEY);
+  return stored ? JSON.parse(stored) : [];
+};
+
+const saveLists = (lists: TaskList[]) => {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(lists));
+};
+
 export const tasksService = {
   async getLists(): Promise<ApiResponse<TaskList[]>> {
     try {
-      const response = await fetch("/api/tasks?type=lists");
-      const data = await response.json();
-
-      if (!response.ok) {
-        return {
-          success: false,
-          error: data.error || "Failed to fetch lists",
-        };
-      }
-
-      return { success: true, data };
+      const lists = getStoredLists();
+      return { success: true, data: lists };
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : "Network error occurred",
+        error: error instanceof Error ? error.message : "Failed to fetch lists",
       };
     }
   },
 
   async createList(data: CreateListData): Promise<ApiResponse<TaskList>> {
     try {
-      const response = await fetch("/api/tasks?type=list", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-      const result = await response.json();
+      const lists = getStoredLists();
+      const newList: TaskList = {
+        id: uuidv4(),
+        title: data.title,
+        tasks: [],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
 
-      if (!response.ok) {
-        return {
-          success: false,
-          error: result.error || "Failed to create list",
-        };
-      }
+      lists.unshift(newList);
+      saveLists(lists);
 
-      return { success: true, data: result };
+      return { success: true, data: newList };
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : "Network error occurred",
+        error: error instanceof Error ? error.message : "Failed to create list",
       };
     }
   },
 
   async createTask(data: CreateTaskData): Promise<ApiResponse<Task>> {
     try {
-      const response = await fetch("/api/tasks", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...data,
-          timeToComplete: data.timeToComplete ? Number(data.timeToComplete) : undefined,
-        }),
-      });
-      const result = await response.json();
+      const lists = getStoredLists();
+      const list = lists.find((l) => l.id === data.listId);
 
-      if (!response.ok) {
+      if (!list) {
         return {
           success: false,
-          error: result.error || "Failed to create task",
+          error: "List not found",
         };
       }
 
-      return { success: true, data: result };
+      const newTask: Task = {
+        id: uuidv4(),
+        title: data.title,
+        description: data.description,
+        timeToComplete: data.timeToComplete,
+        done: false,
+        listId: data.listId,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      list.tasks.push(newTask);
+      list.updatedAt = new Date().toISOString();
+      saveLists(lists);
+
+      return { success: true, data: newTask };
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : "Network error occurred",
+        error: error instanceof Error ? error.message : "Failed to create task",
       };
     }
   },
 
   async updateTask(data: UpdateTaskData): Promise<ApiResponse<Task>> {
     try {
-      const response = await fetch("/api/tasks", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...data,
-          timeToComplete: data.timeToComplete ? Number(data.timeToComplete) : undefined,
-        }),
-      });
-      const result = await response.json();
+      const lists = getStoredLists();
+      const list = lists.find((l) => l.tasks.some((t) => t.id === data.id));
 
-      if (!response.ok) {
+      if (!list) {
         return {
           success: false,
-          error: result.error || "Failed to update task",
+          error: "Task not found",
         };
       }
 
-      return { success: true, data: result };
+      const taskIndex = list.tasks.findIndex((t) => t.id === data.id);
+      if (taskIndex === -1) {
+        return {
+          success: false,
+          error: "Task not found in list",
+        };
+      }
+
+      const updatedTask = {
+        ...list.tasks[taskIndex],
+        ...data,
+        updatedAt: new Date().toISOString(),
+      };
+
+      list.tasks[taskIndex] = updatedTask;
+      list.updatedAt = new Date().toISOString();
+      saveLists(lists);
+
+      return { success: true, data: updatedTask };
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : "Network error occurred",
+        error: error instanceof Error ? error.message : "Failed to update task",
       };
     }
   },
 
   async deleteTask(id: string): Promise<ApiResponse<void>> {
     try {
-      const response = await fetch(`/api/tasks?id=${id}`, {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-      const result = await response.json();
+      const lists = getStoredLists();
+      const list = lists.find((l) => l.tasks.some((t) => t.id === id));
 
-      if (!response.ok) {
+      if (!list) {
         return {
           success: false,
-          error: result.error || "Failed to delete task",
+          error: "Task not found",
         };
       }
+
+      list.tasks = list.tasks.filter((t) => t.id !== id);
+      list.updatedAt = new Date().toISOString();
+      saveLists(lists);
 
       return { success: true };
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : "Network error occurred",
+        error: error instanceof Error ? error.message : "Failed to delete task",
       };
     }
   },
 
   async deleteList(id: string): Promise<ApiResponse<void>> {
     try {
-      const response = await fetch(`/api/tasks?id=${id}&type=list`, {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-      const result = await response.json();
+      const lists = getStoredLists();
+      const filteredLists = lists.filter((l) => l.id !== id);
 
-      if (!response.ok) {
+      if (filteredLists.length === lists.length) {
         return {
           success: false,
-          error: result.error || "Failed to delete list",
+          error: "List not found",
         };
       }
 
+      saveLists(filteredLists);
       return { success: true };
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : "Network error occurred",
+        error: error instanceof Error ? error.message : "Failed to delete list",
       };
     }
   },
 
   async updateList(data: { id: string; title: string }): Promise<ApiResponse<void>> {
     try {
-      const response = await fetch(`/api/tasks?id=${data.id}&type=list`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: data.title }),
-      });
-      const result = await response.json();
+      const lists = getStoredLists();
+      const list = lists.find((l) => l.id === data.id);
 
-      if (!response.ok) {
+      if (!list) {
         return {
           success: false,
-          error: result.error || "Failed to update list",
+          error: "List not found",
         };
       }
+
+      list.title = data.title;
+      list.updatedAt = new Date().toISOString();
+      saveLists(lists);
 
       return { success: true };
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : "Network error occurred",
+        error: error instanceof Error ? error.message : "Failed to update list",
       };
     }
   },
