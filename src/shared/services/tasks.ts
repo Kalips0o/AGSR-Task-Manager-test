@@ -120,7 +120,7 @@ export const tasksService = {
         updatedAt: new Date().toISOString(),
       };
 
-      list.tasks[taskIndex] = updatedTask;
+      list.tasks[taskIndex] = <Task>updatedTask;
       list.updatedAt = new Date().toISOString();
       saveLists(lists);
 
