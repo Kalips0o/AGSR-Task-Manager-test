@@ -1,22 +1,22 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useDispatch, useSelector } from "react-redux";
 
 import { Button } from "@/shared/components/ui/button";
 import { Typography } from "@/shared/components/ui/typography";
+import type { RootState } from "@/shared/redux";
+import { logout } from "@/shared/redux/slices/authSlice";
 
 import { IconLogout } from "../../shared/components/icons/icon-logout";
 
-interface HeaderProps {
-  email: string;
-}
-
-export function Header({ email }: HeaderProps) {
+export function Header() {
   const router = useRouter();
+  const dispatch = useDispatch();
+  const email = useSelector((state: RootState) => state.auth.email);
 
   const handleLogout = () => {
-    // TODO: Add proper logout logic here
-    // For now, just redirect to login page
+    dispatch(logout());
     router.push("/login");
   };
 

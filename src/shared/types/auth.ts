@@ -1,9 +1,6 @@
-export interface LoginCredentials {
-  email: string;
-  password: string;
-}
-
-export interface AuthResponse {
-  success: boolean;
-  error?: string;
+export interface AuthState {
+  isAuthenticated: boolean;
+  email: string | null;
+  isLoading: boolean;
+  error: string | null;
 }

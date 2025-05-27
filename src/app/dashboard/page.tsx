@@ -58,7 +58,7 @@ export default function DashboardPage() {
 
   return (
     <>
-      <Header email={userEmail} />
+      <Header />
 
       <main className="max-w-5xl mx-auto px-4 py-8">
         <div className="mb-6">

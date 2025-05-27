@@ -1,8 +1,11 @@
-import { useState } from "react";
+"use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, type SubmitHandler } from "react-hook-form";
+import { useDispatch, useSelector } from "react-redux";
 
+import type { RootState } from "@/shared/redux";
+import { loginStart, loginSuccess, loginFailure } from "@/shared/redux/slices/authSlice";
 import { loginSchema, type LoginFormData } from "@/shared/schemas/auth";
 import { authService } from "@/shared/services/auth";
 
@@ -15,8 +18,8 @@ interface LoginFormProps {
 }
 
 export function LoginForm({ onSuccess }: LoginFormProps) {
-  const [isLoading, setIsLoading] = useState(false);
-  const [serverError, setServerError] = useState("");
+  const dispatch = useDispatch();
+  const { isLoading, error: serverError } = useSelector((state: RootState) => state.auth);
 
   const {
     register,
@@ -32,23 +35,21 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
   });
 
   const onSubmit: SubmitHandler<LoginFormData> = async (data) => {
-    setIsLoading(true);
-    setServerError("");
+    dispatch(loginStart());
 
     try {
       const response = await authService.login(data);
 
       if (response.success) {
+        dispatch(loginSuccess(data.email));
         onSuccess();
       } else {
-        setServerError(response.error || "An error occurred");
+        dispatch(loginFailure(response.error || "An error occurred"));
       }
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : "An error occurred. Please try again.";
-      setServerError(errorMessage);
-    } finally {
-      setIsLoading(false);
+      dispatch(loginFailure(errorMessage));
     }
   };
 
