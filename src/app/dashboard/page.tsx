@@ -2,8 +2,12 @@
 
 import React, { useState } from "react";
 
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
+import { useForm, type SubmitHandler } from "react-hook-form";
 import { v4 as uuidv4 } from "uuid";
+
+import { newListSchema, type NewListFormData } from "@/shared/schemas/list";
 
 import { Header } from "../../components/header/header";
 import { Button } from "../../shared/components/ui/button";
@@ -19,18 +23,29 @@ export default function DashboardPage() {
       tasks: [{ id: "t1", title: "Make a commit", done: false }],
     },
   ]);
-  const [newTitle, setNewTitle] = useState("");
   const userEmail = "test@example.com";
 
-  const handleAddList = () => {
-    if (!newTitle.trim()) return;
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<NewListFormData>({
+    resolver: zodResolver(newListSchema),
+    defaultValues: {
+      title: "",
+    },
+    mode: "onChange",
+  });
+
+  const onSubmit: SubmitHandler<NewListFormData> = (data) => {
     const newList = {
       id: uuidv4(),
-      title: newTitle,
+      title: data.title,
       tasks: [],
     };
     setLists((prev) => [...prev, newList]);
-    setNewTitle("");
+    reset();
   };
 
   const handleDeleteList = (id: string) => {
@@ -52,18 +67,18 @@ export default function DashboardPage() {
         </div>
 
         <div className="bg-white border border-gray-200 rounded-lg p-4 mb-8 shadow-sm">
-          <div className="flex flex-col sm:flex-row gap-3">
+          <form className="flex flex-col sm:flex-row gap-3" onSubmit={handleSubmit(onSubmit)}>
             <div className="flex-1 min-w-0">
               <Input
+                {...register("title")}
+                error={errors.title?.message}
                 placeholder="New list name"
-                value={newTitle}
-                onChange={(e) => setNewTitle(e.target.value)}
               />
             </div>
-            <Button className="sm:w-auto" variant="default" onClick={handleAddList}>
+            <Button className="sm:w-auto" type="submit" variant="default">
               Add List
             </Button>
-          </div>
+          </form>
         </div>
 
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -82,7 +97,7 @@ export default function DashboardPage() {
 
               <div className="flex flex-wrap gap-2">
                 <Button variant="secondary" onClick={() => router.push(`/list/${list.id}`)}>
-                  Open
+                  Edit
                 </Button>
                 <Button variant="destructive" onClick={() => handleDeleteList(list.id)}>
                   Delete
