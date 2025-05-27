@@ -1,28 +1,35 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect } from "react";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { useForm, type SubmitHandler } from "react-hook-form";
-import { v4 as uuidv4 } from "uuid";
+import { useDispatch, useSelector } from "react-redux";
 
+import type { AppDispatch } from "@/shared/redux";
+import {
+  fetchLists,
+  createList,
+  deleteList,
+  selectLists,
+  selectTasksLoading,
+  selectTasksError,
+} from "@/shared/redux/slices/tasksSlice";
 import { newListSchema, type NewListFormData } from "@/shared/schemas/list";
 
 import { Header } from "../../components/header/header";
 import { Button } from "../../shared/components/ui/button";
 import { EditableTitle } from "../../shared/components/ui/editableTitle";
 import { Input } from "../../shared/components/ui/input";
+import { Typography } from "../../shared/components/ui/typography";
 
 export default function DashboardPage() {
   const router = useRouter();
-  const [lists, setLists] = useState([
-    {
-      id: "1",
-      title: "Work Tasks",
-      tasks: [{ id: "t1", title: "Make a commit", done: false }],
-    },
-  ]);
+  const dispatch = useDispatch<AppDispatch>();
+  const lists = useSelector(selectLists);
+  const isLoading = useSelector(selectTasksLoading);
+  const error = useSelector(selectTasksError);
 
   const {
     register,
@@ -37,23 +44,49 @@ export default function DashboardPage() {
     mode: "onChange",
   });
 
-  const onSubmit: SubmitHandler<NewListFormData> = (data) => {
-    const newList = {
-      id: uuidv4(),
-      title: data.title,
-      tasks: [],
-    };
-    setLists((prev) => [...prev, newList]);
-    reset();
+  useEffect(() => {
+    dispatch(fetchLists());
+  }, [dispatch]);
+
+  const onSubmit: SubmitHandler<NewListFormData> = async (data) => {
+    const result = await dispatch(createList(data));
+    if (createList.fulfilled.match(result)) {
+      reset();
+    }
   };
 
-  const handleDeleteList = (id: string) => {
-    setLists((prev) => prev.filter((list) => list.id !== id));
+  const handleDeleteList = async (id: string) => {
+    await dispatch(deleteList(id));
   };
 
   const handleEditTitle = (id: string, title: string) => {
-    setLists((prev) => prev.map((list) => (list.id === id ? { ...list, title } : list)));
+    // TODO: Implement edit list title functionality
+    console.log("Edit title:", id, title);
   };
+
+  if (isLoading && lists.length === 0) {
+    return (
+      <>
+        <Header />
+        <main className="max-w-5xl mx-auto px-4 py-8">
+          <Typography variant="body-lg-regular">Loading...</Typography>
+        </main>
+      </>
+    );
+  }
+
+  if (error) {
+    return (
+      <>
+        <Header />
+        <main className="max-w-5xl mx-auto px-4 py-8">
+          <Typography className="text-red-500" variant="body-lg-regular">
+            Error: {error}
+          </Typography>
+        </main>
+      </>
+    );
+  }
 
   return (
     <>
@@ -61,8 +94,12 @@ export default function DashboardPage() {
 
       <main className="max-w-5xl mx-auto px-4 py-8">
         <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">Task Lists</h1>
-          <p className="text-gray-500">Manage your tasks in organized groups</p>
+          <Typography className="text-gray-800 mb-2" tag="h1" variant="headline-1">
+            Task Lists
+          </Typography>
+          <Typography className="text-gray-500" variant="body-m-regular">
+            Manage your tasks in organized groups
+          </Typography>
         </div>
 
         <div className="bg-white border border-gray-200 rounded-lg p-4 mb-8 shadow-sm">
@@ -70,41 +107,59 @@ export default function DashboardPage() {
             <div className="flex-1 min-w-0">
               <Input
                 {...register("title")}
+                disabled={isLoading}
                 error={errors.title?.message}
                 placeholder="New list name"
               />
             </div>
-            <Button className="sm:w-auto" type="submit" variant="default">
-              Add List
+            <Button className="sm:w-auto" disabled={isLoading} type="submit" variant="default">
+              {isLoading ? "Adding..." : "Add List"}
             </Button>
           </form>
         </div>
 
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {lists.map((list) => (
-            <div
-              className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm hover:shadow-md transition"
-              key={list.id}
-            >
-              <EditableTitle
-                inputClassName="text-lg font-medium text-gray-800 w-full border-b border-gray-300 focus:outline-none focus:border-gray-500"
-                title={list.title}
-                onChange={(newTitle) => handleEditTitle(list.id, newTitle)}
-              />
+        {lists.length === 0 ? (
+          <div className="text-center py-12 bg-white border border-gray-200 rounded-lg shadow-sm">
+            <Typography className="text-gray-600 mb-2" variant="body-lg-regular">
+              You don&#39;t have any task lists yet
+            </Typography>
+            <Typography className="text-gray-500" variant="body-m-regular">
+              Create your first list to start organizing your tasks
+            </Typography>
+          </div>
+        ) : (
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {lists.map((list) => (
+              <div
+                className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm hover:shadow-md transition"
+                key={list.id}
+              >
+                <EditableTitle
+                  inputClassName="text-lg font-medium text-gray-800 w-full border-b border-gray-300 focus:outline-none focus:border-gray-500"
+                  title={list.title}
+                  onChange={(newTitle) => handleEditTitle(list.id, newTitle)}
+                />
 
-              <p className="text-sm text-gray-500 mt-1 mb-4">Tasks: {list.tasks.length}</p>
+                <Typography className="text-gray-500 mt-1 mb-4" variant="body-m-regular">
+                  Tasks: {list.tasks.length}
+                </Typography>
 
-              <div className="flex flex-wrap gap-2">
-                <Button variant="secondary" onClick={() => router.push(`/list/${list.id}`)}>
-                  Edit
-                </Button>
-                <Button variant="destructive" onClick={() => handleDeleteList(list.id)}>
-                  Delete
-                </Button>
+                <div className="flex flex-wrap gap-2">
+                  <Button variant="secondary" onClick={() => router.push(`/list/${list.id}`)}>
+                    Edit
+                  </Button>
+                  <Button
+                    disabled={isLoading}
+                    variant="destructive"
+                    onClick={() => handleDeleteList(list.id)}
+                  >
+                    Delete
+                  </Button>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </main>
     </>
   );

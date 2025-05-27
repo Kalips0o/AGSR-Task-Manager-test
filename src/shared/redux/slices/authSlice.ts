@@ -26,7 +26,11 @@ export const loginUser = createAsyncThunk<string, LoginFormData, { rejectValue: 
       const response = await authService.login(credentials);
 
       if (!response.success) {
-        return rejectWithValue(response.error);
+        return rejectWithValue(response.error ?? "Authentication failed");
+      }
+
+      if (!response.email) {
+        return rejectWithValue("Email not provided");
       }
 
       return response.email;
