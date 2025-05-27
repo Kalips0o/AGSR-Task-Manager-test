@@ -77,6 +77,18 @@ export const deleteList = createAsyncThunk<string, string, { rejectValue: string
   }
 );
 
+export const updateList = createAsyncThunk<
+  { id: string; title: string },
+  { id: string; title: string },
+  { rejectValue: string }
+>("tasks/updateList", async (data, { rejectWithValue }) => {
+  const response = await tasksService.updateList(data);
+  if (!response.success) {
+    return rejectWithValue(response.error ?? "Failed to update list");
+  }
+  return data;
+});
+
 const tasksSlice = createSlice({
   name: "tasks",
   initialState,
@@ -106,7 +118,7 @@ const tasksSlice = createSlice({
         state.error = null;
       })
       .addCase(createList.fulfilled, (state, action) => {
-        state.lists.push(action.payload);
+        state.lists.unshift(action.payload);
         state.isLoading = false;
       })
       .addCase(createList.rejected, (state, action) => {
@@ -176,6 +188,28 @@ const tasksSlice = createSlice({
       .addCase(deleteList.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload ?? "Failed to delete list";
+      })
+      // Update List
+      .addCase(updateList.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(updateList.fulfilled, (state, action) => {
+        const listIndex = state.lists.findIndex((l) => l.id === action.payload.id);
+        if (listIndex !== -1) {
+          const updatedList = {
+            ...state.lists[listIndex],
+            title: action.payload.title,
+            updatedAt: new Date().toISOString(),
+          };
+          state.lists.splice(listIndex, 1);
+          state.lists.unshift(updatedList);
+        }
+        state.isLoading = false;
+      })
+      .addCase(updateList.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload ?? "Failed to update list";
       });
   },
 });

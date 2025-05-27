@@ -59,7 +59,10 @@ export const tasksService = {
       const response = await fetch("/api/tasks", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          ...data,
+          timeToComplete: data.timeToComplete ? Number(data.timeToComplete) : undefined,
+        }),
       });
       const result = await response.json();
 
@@ -81,10 +84,13 @@ export const tasksService = {
 
   async updateTask(data: UpdateTaskData): Promise<ApiResponse<Task>> {
     try {
-      const response = await fetch(`/api/tasks/${data.id}`, {
+      const response = await fetch("/api/tasks", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          ...data,
+          timeToComplete: data.timeToComplete ? Number(data.timeToComplete) : undefined,
+        }),
       });
       const result = await response.json();
 
@@ -144,6 +150,31 @@ export const tasksService = {
         return {
           success: false,
           error: result.error || "Failed to delete list",
+        };
+      }
+
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Network error occurred",
+      };
+    }
+  },
+
+  async updateList(data: { id: string; title: string }): Promise<ApiResponse<void>> {
+    try {
+      const response = await fetch(`/api/tasks?id=${data.id}&type=list`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: data.title }),
+      });
+      const result = await response.json();
+
+      if (!response.ok) {
+        return {
+          success: false,
+          error: result.error || "Failed to update list",
         };
       }
 

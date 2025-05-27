@@ -86,6 +86,8 @@ export async function POST(request: Request) {
     const newTask: Task = {
       id: uuidv4(),
       title: validatedData.title,
+      description: validatedData.description,
+      timeToComplete: validatedData.timeToComplete,
       done: false,
       listId: validatedData.listId,
       createdAt: new Date().toISOString(),
@@ -104,12 +106,39 @@ export async function POST(request: Request) {
   }
 }
 
+// PATCH /api/tasks?id=123&type=list - обновить список
 // PATCH /api/tasks - обновить задачу
 export async function PATCH(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get("id");
+    const type = searchParams.get("type");
     const body = await request.json();
-    const validatedData = updateTaskSchema.parse(body);
 
+    if (type === "list") {
+      if (!id) {
+        return NextResponse.json({ success: false, error: "List ID is required" }, { status: 400 });
+      }
+
+      const list = global.lists.find((l) => l.id === id);
+      if (!list) {
+        return NextResponse.json({ success: false, error: "List not found" }, { status: 404 });
+      }
+
+      if (!body.title || typeof body.title !== "string") {
+        return NextResponse.json(
+          { success: false, error: "Title is required and must be a string" },
+          { status: 400 }
+        );
+      }
+
+      list.title = body.title.trim();
+      list.updatedAt = new Date().toISOString();
+
+      return NextResponse.json({ success: true });
+    }
+
+    const validatedData = updateTaskSchema.parse(body);
     const list = global.lists.find((l) => l.tasks.some((t) => t.id === validatedData.id));
     if (!list) {
       return NextResponse.json({ success: false, error: "Task not found" }, { status: 404 });
@@ -119,6 +148,10 @@ export async function PATCH(request: Request) {
     const updatedTask: Task = {
       ...task,
       ...validatedData,
+      createdAt:
+        validatedData.timeToComplete !== task.timeToComplete
+          ? new Date().toISOString()
+          : task.createdAt,
       updatedAt: new Date().toISOString(),
     };
 

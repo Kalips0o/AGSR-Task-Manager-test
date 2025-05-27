@@ -1,6 +1,8 @@
 export interface Task {
   id: string;
   title: string;
+  description?: string;
+  timeToComplete?: number;
   done: boolean;
   listId: string;
   createdAt: string;
