@@ -4,10 +4,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { useDispatch, useSelector } from "react-redux";
 
-import type { RootState } from "@/shared/redux";
-import { loginStart, loginSuccess, loginFailure } from "@/shared/redux/slices/authSlice";
+import type { AppDispatch } from "@/shared/redux";
+import { loginUser, selectAuthLoading, selectAuthError } from "@/shared/redux/slices/authSlice";
 import { loginSchema, type LoginFormData } from "@/shared/schemas/auth";
-import { authService } from "@/shared/services/auth";
 
 import { Button } from "../../shared/components/ui/button";
 import { Input } from "../../shared/components/ui/input";
@@ -18,38 +17,28 @@ interface LoginFormProps {
 }
 
 export function LoginForm({ onSuccess }: LoginFormProps) {
-  const dispatch = useDispatch();
-  const { isLoading, error: serverError } = useSelector((state: RootState) => state.auth);
+  const dispatch = useDispatch<AppDispatch>();
+  const isLoading = useSelector(selectAuthLoading);
+  const serverError = useSelector(selectAuthError);
 
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isSubmitted },
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
       email: "",
       password: "",
     },
-    mode: "onChange",
+    mode: "onSubmit",
   });
 
   const onSubmit: SubmitHandler<LoginFormData> = async (data) => {
-    dispatch(loginStart());
+    const result = await dispatch(loginUser(data));
 
-    try {
-      const response = await authService.login(data);
-
-      if (response.success) {
-        dispatch(loginSuccess(data.email));
-        onSuccess();
-      } else {
-        dispatch(loginFailure(response.error || "An error occurred"));
-      }
-    } catch (err) {
-      const errorMessage =
-        err instanceof Error ? err.message : "An error occurred. Please try again.";
-      dispatch(loginFailure(errorMessage));
+    if (loginUser.fulfilled.match(result)) {
+      onSuccess();
     }
   };
 
@@ -65,21 +54,21 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
       </div>
 
       <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
-        <div className="space-y-2">
+        <div>
           <Input
             {...register("email")}
             disabled={isLoading}
-            error={errors.email?.message}
+            error={isSubmitted ? errors.email?.message : undefined}
             placeholder="Email"
             type="email"
           />
         </div>
 
-        <div className="space-y-2">
+        <div>
           <Input
             {...register("password")}
             disabled={isLoading}
-            error={errors.password?.message}
+            error={isSubmitted ? errors.password?.message : undefined}
             placeholder="Password"
             type="password"
           />

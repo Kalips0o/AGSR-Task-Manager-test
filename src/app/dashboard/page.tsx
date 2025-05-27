@@ -23,7 +23,6 @@ export default function DashboardPage() {
       tasks: [{ id: "t1", title: "Make a commit", done: false }],
     },
   ]);
-  const userEmail = "test@example.com";
 
   const {
     register,

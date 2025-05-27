@@ -3,17 +3,30 @@ import { AuthResponse } from "../types/auth";
 
 export const authService = {
   async login(credentials: LoginFormData): Promise<AuthResponse> {
-    // Имитация задержки сети
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    try {
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(credentials),
+      });
 
-    // Пример локальной валидации
-    if (credentials.email === "test@example.com" && credentials.password === "123456") {
-      return { success: true };
+      const data = await response.json();
+
+      if (!response.ok) {
+        return {
+          success: false,
+          error: data.error || "An error occurred during login",
+        };
+      }
+
+      return data;
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Network error occurred",
+      };
     }
-
-    return {
-      success: false,
-      error: "Invalid email or password",
-    };
   },
 };

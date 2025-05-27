@@ -4,3 +4,10 @@ export interface AuthState {
   isLoading: boolean;
   error: string | null;
 }
+
+export interface AuthResponse {
+  success: boolean;
+  email?: string;
+  error?: string;
+  details?: unknown;
+}

@@ -5,15 +5,14 @@ import { useDispatch, useSelector } from "react-redux";
 
 import { Button } from "@/shared/components/ui/button";
 import { Typography } from "@/shared/components/ui/typography";
-import type { RootState } from "@/shared/redux";
-import { logout } from "@/shared/redux/slices/authSlice";
+import { logout, selectAuthEmail } from "@/shared/redux/slices/authSlice";
 
 import { IconLogout } from "../../shared/components/icons/icon-logout";
 
 export function Header() {
   const router = useRouter();
   const dispatch = useDispatch();
-  const email = useSelector((state: RootState) => state.auth.email);
+  const email = useSelector(selectAuthEmail);
 
   const handleLogout = () => {
     dispatch(logout());
