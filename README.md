@@ -1,4 +1,4 @@
-# [Task Management App](https://agsr-task-manager-test-qzsg.vercel.app)
+# [Task Management App](https://agsr-task-manager-test.vercel.app/)
 
 ## Запуск проекта
 
