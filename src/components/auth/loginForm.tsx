@@ -83,18 +83,6 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
         <Button className="w-full" disabled={isLoading} type="submit">
           {isLoading ? "Signing in..." : "Sign In"}
         </Button>
-
-        <div className="text-center">
-          <Typography className="text-gray-600" variant="body-m-regular">
-            Test credentials:
-          </Typography>
-          <Typography className="text-gray-600" variant="body-m-regular">
-            Email: test@example.com
-          </Typography>
-          <Typography className="text-gray-600" variant="body-m-regular">
-            Password: 123456
-          </Typography>
-        </div>
       </form>
     </div>
   );
