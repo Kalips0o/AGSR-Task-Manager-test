@@ -11,9 +11,9 @@ import type { Task } from "@/shared/types/task";
 interface TaskCardProps {
   task: Task;
   isLoading?: boolean;
-  onEdit: (task: Task) => void;
-  onDelete: (taskId: string) => void;
-  onToggleStatus: (task: Task) => void;
+  onEdit?: (task: Task) => void;
+  onDelete?: (taskId: string) => Promise<void>;
+  onToggleStatus?: (task: Task) => Promise<void>;
 }
 
 export function TaskCard({ task, isLoading, onEdit, onDelete, onToggleStatus }: TaskCardProps) {
@@ -26,7 +26,7 @@ export function TaskCard({ task, isLoading, onEdit, onDelete, onToggleStatus }: 
               checked={task.done}
               disabled={isLoading}
               title={`Mark task as ${task.done ? "incomplete" : "complete"}`}
-              onChange={() => onToggleStatus(task)}
+              onChange={() => onToggleStatus?.(task)}
             />
             <Typography
               className={cn("text-gray-800", task.done && "line-through text-gray-500")}
@@ -70,7 +70,7 @@ export function TaskCard({ task, isLoading, onEdit, onDelete, onToggleStatus }: 
             size="icon"
             title="View task details"
             variant="ghost"
-            onClick={() => onEdit(task)}
+            onClick={() => onEdit?.(task)}
           >
             <IconEye className="h-5 w-5" />
           </Button>
@@ -80,7 +80,7 @@ export function TaskCard({ task, isLoading, onEdit, onDelete, onToggleStatus }: 
             size="icon"
             title="Delete task"
             variant="ghost"
-            onClick={() => onDelete(task.id)}
+            onClick={() => onDelete?.(task.id)}
           >
             <IconTrash className="h-5 w-5" />
           </Button>

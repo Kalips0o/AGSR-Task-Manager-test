@@ -1,16 +1,16 @@
 import React from "react";
 
+import { Typography } from "@/shared/components/ui/typography";
 import type { Task } from "@/shared/types/task";
 
-import { EmptyTaskList } from "./emptyTaskList";
 import { TaskCard } from "./taskCard";
 
 interface TaskListProps {
   tasks: Task[];
   isLoading?: boolean;
-  onEditTask: (task: Task) => void;
-  onDeleteTask: (taskId: string) => void;
-  onToggleTaskStatus: (task: Task) => void;
+  onEditTask?: (task: Task) => void;
+  onDeleteTask?: (taskId: string) => Promise<void>;
+  onToggleTaskStatus?: (task: Task) => Promise<void>;
 }
 
 export function TaskList({
@@ -21,10 +21,15 @@ export function TaskList({
   onToggleTaskStatus,
 }: TaskListProps) {
   if (tasks.length === 0) {
-    return <EmptyTaskList />;
+    return (
+      <div className="flex flex-col items-center justify-center p-8 text-center">
+        <Typography className="text-gray-500" variant="body-lg-regular">
+          No tasks yet. Create your first task to get started!
+        </Typography>
+      </div>
+    );
   }
 
-  // Сортируем задачи по дате создания (новые сверху)
   const sortedTasks = [...tasks].sort(
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   );

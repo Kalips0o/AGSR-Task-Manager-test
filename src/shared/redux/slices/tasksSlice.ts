@@ -147,11 +147,23 @@ const tasksSlice = createSlice({
         state.error = null;
       })
       .addCase(updateTask.fulfilled, (state, action) => {
-        const list = state.lists.find((l) => l.id === action.payload.listId);
-        if (list) {
-          const taskIndex = list.tasks.findIndex((t) => t.id === action.payload.id);
+        const listIndex = state.lists.findIndex((l) =>
+          l.tasks.some((t) => t.id === action.payload.id)
+        );
+        if (listIndex !== -1) {
+          const taskIndex = state.lists[listIndex].tasks.findIndex(
+            (t) => t.id === action.payload.id
+          );
           if (taskIndex !== -1) {
-            list.tasks[taskIndex] = action.payload;
+            const updatedTask = {
+              ...state.lists[listIndex].tasks[taskIndex],
+              ...action.payload,
+              createdAt:
+                action.payload.createdAt || state.lists[listIndex].tasks[taskIndex].createdAt,
+              updatedAt: new Date().toISOString(),
+            };
+            state.lists[listIndex].tasks[taskIndex] = updatedTask;
+            state.lists[listIndex].updatedAt = new Date().toISOString();
           }
         }
         state.isLoading = false;

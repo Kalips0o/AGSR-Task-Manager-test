@@ -34,7 +34,6 @@ export function DashboardContent() {
   const error = useSelector(selectTasksError);
   const [viewingList, setViewingList] = useState<TaskList | null>(null);
 
-  // Сортируем списки от новых к старым
   const sortedLists = [...lists].sort(
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   );

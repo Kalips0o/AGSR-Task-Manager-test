@@ -12,7 +12,6 @@ interface ListTasksModalProps {
 }
 
 export function ListTasksModal({ isOpen, onClose, tasks, listTitle }: ListTasksModalProps) {
-  // Сортируем задачи от новых к старым
   const sortedTasks = [...tasks].sort(
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   );

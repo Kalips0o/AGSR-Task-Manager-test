@@ -4,17 +4,17 @@ import { useForm } from "react-hook-form";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
 import { Typography } from "@/shared/components/ui/typography";
-import {
-  taskFormSchema,
-  taskSchema,
-  type CreateTaskData,
-  type TaskFormValues,
-} from "@/shared/schemas/task";
+import { taskFormSchema } from "@/shared/schemas/task";
 
 type TaskFormProps = {
   isLoading: boolean;
   listId: string;
-  onSubmit: (data: CreateTaskData) => Promise<void>;
+  onSubmit: (data: {
+    title: string;
+    listId: string;
+    description?: string;
+    timeToComplete?: string;
+  }) => Promise<void>;
 };
 
 export function TaskForm({ isLoading, listId, onSubmit }: TaskFormProps) {
@@ -23,7 +23,12 @@ export function TaskForm({ isLoading, listId, onSubmit }: TaskFormProps) {
     handleSubmit,
     reset,
     formState: { errors },
-  } = useForm<TaskFormValues>({
+  } = useForm<{
+    title: string;
+    description?: string;
+    timeToComplete?: string;
+    listId: string;
+  }>({
     resolver: zodResolver(taskFormSchema),
     defaultValues: {
       title: "",
@@ -34,9 +39,12 @@ export function TaskForm({ isLoading, listId, onSubmit }: TaskFormProps) {
   });
 
   const handleFormSubmit = handleSubmit(async (formData) => {
-    const validatedData = taskSchema.parse(formData);
-    await onSubmit(validatedData);
-    reset();
+    try {
+      await onSubmit(formData);
+      reset();
+    } catch (error) {
+      console.error("Validation error:", error);
+    }
   });
 
   return (

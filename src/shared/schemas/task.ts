@@ -1,16 +1,5 @@
 import { z } from "zod";
 
-// Схема для формы создания задачи
-const timeToCompleteFormSchema = z
-  .string()
-  .transform((val) => {
-    if (val === "") return undefined;
-    if (!/^\d+$/.test(val)) throw new Error("Time must be a positive integer");
-    return Number(val);
-  })
-  .optional();
-
-// Схема для API
 const timeToCompleteApiSchema = z
   .number()
   .int()
@@ -24,7 +13,7 @@ export const taskFormSchema = z.object({
     .max(100, "Task title must be less than 100 characters")
     .trim(),
   description: z.string().max(150, "Description must be less than 150 characters").optional(),
-  timeToComplete: timeToCompleteFormSchema,
+  timeToComplete: z.string().optional(),
   listId: z.string().uuid("Invalid list ID"),
 });
 
@@ -67,9 +56,10 @@ export const updateTaskSchema = z.object({
 export type CreateTaskFormData = z.infer<typeof taskFormSchema>;
 export type CreateTaskData = z.infer<typeof taskSchema>;
 export type CreateListData = z.infer<typeof taskListSchema>;
-export type UpdateTaskData = z.infer<typeof updateTaskSchema>;
-
-// Добавляем тип для формы с учетом преобразования времени
-export type TaskFormValues = Omit<CreateTaskFormData, "timeToComplete"> & {
-  timeToComplete?: string;
+export type UpdateTaskData = {
+  id: string;
+  title?: string;
+  description?: string;
+  timeToComplete?: string | number;
+  done?: boolean;
 };

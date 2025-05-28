@@ -117,6 +117,10 @@ export const tasksService = {
       const updatedTask = {
         ...list.tasks[taskIndex],
         ...data,
+        timeToComplete:
+          typeof data.timeToComplete === "string"
+            ? Number(data.timeToComplete)
+            : data.timeToComplete,
         updatedAt: new Date().toISOString(),
       };
 
